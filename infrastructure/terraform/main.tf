@@ -22,7 +22,7 @@ data "aws_internet_gateway" "existing" {
 
 # Check if attached
 locals {
-  igw_attached = length(data.aws_internet_gateway.existing.ids) > 0
+  igw_attached = length(data.aws_internet_gateway.existing.id) > 0
 }
 
 # Create only if missing
@@ -37,7 +37,7 @@ resource "aws_internet_gateway" "attached_to_default" {
 
 # Pick correct IGW ID
 locals {
-  igw_id = local.igw_attached ? data.aws_internet_gateway.existing.ids[0] : aws_internet_gateway.attached_to_default[0].id
+  igw_id = local.igw_attached ? data.aws_internet_gateway.existing.id[0] : aws_internet_gateway.attached_to_default[0].id
 }
 
 # Getting main route table
