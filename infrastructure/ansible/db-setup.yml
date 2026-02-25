@@ -1,0 +1,32 @@
+- hosts: db
+  become: yes
+
+  tasks:
+
+    - name: Update apt
+      apt:
+        update_cache: yes
+
+    - name: Install PostgreSQL
+      apt:
+        name: postgresql
+        state: present
+
+    - name: Ensure PostgreSQL is running
+      service:
+        name: postgresql
+        state: started
+        enabled: yes
+
+    - name: Create database user
+      become_user: postgres
+      postgresql_user:
+        name: "{{ lookup('env', 'POSTGRES_USER') }}"
+        password: "{{ lookup('env', 'POSTGRES_PASSWORD') }}"
+        role_attr_flags: CREATEDB
+
+    - name: Create database
+      become_user: postgres
+      postgresql_db:
+        name: "{{ lookup('env', 'POSTGRES_DB') }}"
+        owner: "{{ lookup('env', 'POSTGRES_USER') }}"

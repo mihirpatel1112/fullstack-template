@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.env
+build/
+*.egg-info/
+
+# Node
+node_modules/
+.next/
+.env.local
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+
+# General
+.DS_Store
+*.log
