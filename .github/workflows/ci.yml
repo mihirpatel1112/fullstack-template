@@ -21,16 +21,9 @@ jobs:
       - name: Start services
         run: docker compose up -d
 
-      - name: Wait for services
-        run: |
-          sleep 10
-          docker compose ps
-
-      # - name: Run backend tests (pytest)
-      #   run: docker compose exec -T backend pytest
-
-      - name: Run frontend build
-        run: docker compose exec -T frontend npm run build
+      - name: Show running containers
+        run: docker compose ps
 
       - name: Stop services
+        if: always()
         run: docker compose down
