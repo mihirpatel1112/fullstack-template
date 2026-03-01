@@ -1,3 +1,13 @@
+terraform {
+  backend "s3" {
+    bucket         = "fullstack-template-terraform-state"
+    key            = "fullstack-template/staging/terraform.tfstate"
+    region         = "ap-southeast-2"
+    dynamodb_table = "terraform-locks"
+    encrypt        = true
+  }
+}
+
 data "aws_ami" "ubuntu" {
   most_recent = true
   owners      = ["099720109477"] # Canonical
