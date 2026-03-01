@@ -73,13 +73,12 @@
         group: ubuntu
         mode: "0755"
 
-    - name: Copy production docker-compose file
-      copy:
-        src: docker-compose.prod.yml
-        dest: "{{ app_dir }}/docker-compose.yml"
-        owner: ubuntu
-        group: ubuntu
-        mode: "0644"
+    - name: Clone application repo
+      git:
+        repo: "https://github.com/mihirpatel1112/fullstack-template.git"
+        dest: "{{ app_dir }}"
+        version: "production"
+        force: yes
 
     - name: Create .env file
       copy:
