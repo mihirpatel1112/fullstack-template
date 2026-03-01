@@ -80,6 +80,14 @@
         version: "production"
         force: yes
 
+    - name: Copy production docker-compose
+      copy:
+        src: files/docker-compose.prod.yml
+        dest: "{{ app_dir }}/docker-compose.yml"
+        owner: ubuntu
+        group: ubuntu
+        mode: "0644"
+
     - name: Create .env file
       copy:
         dest: "{{ app_dir }}/.env"
