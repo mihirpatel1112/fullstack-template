@@ -11,15 +11,14 @@
       apt:
         update_cache: yes
 
-    # Docker (Ubuntu repo version is fine for hobby/prod small apps)
     - name: Install Docker
       apt:
         name: docker.io
         state: present
 
-    - name: Install docker-compose
+    - name: Install Docker Compose plugin (v2)
       apt:
-        name: docker-compose
+        name: docker-compose-plugin
         state: present
 
     - name: Enable and start Docker
@@ -52,22 +51,25 @@
 
     - name: Create .env file
       copy:
-        dest: /home/ubuntu/app/.env
+        dest: "{{ app_dir }}/.env"
         content: |
           POSTGRES_USER={{ postgres_user }}
           POSTGRES_PASSWORD={{ postgres_password }}
           POSTGRES_DB={{ postgres_db }}
+        owner: ubuntu
+        group: ubuntu
+        mode: "0600"
 
-    - name: Login to GHCR (for pulling images)
+    - name: Login to GHCR
       shell: |
         echo "{{ ghcr_token }}" | docker login ghcr.io -u "{{ ghcr_username }}" --password-stdin
 
     - name: Pull latest images
-      command: docker-compose pull
+      command: docker compose pull
       args:
         chdir: "{{ app_dir }}"
 
     - name: Start / Update containers
-      command: docker-compose up -d
+      command: docker compose up -d --remove-orphans
       args:
         chdir: "{{ app_dir }}"
