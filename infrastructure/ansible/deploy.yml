@@ -21,9 +21,9 @@
         update_cache: yes
 
     - name: Add Docker GPG key
-      ansible.builtin.ansible.builtin.command: >
-        mkdir -p /etc/apt/keyrings &&
-        curl -fsSL https://download.docker.com/linux/ubuntu/gpg |
+      shell: |
+        mkdir -p /etc/apt/keyrings
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
           gpg --dearmor -o /etc/apt/keyrings/docker.gpg
       args:
         creates: /etc/apt/keyrings/docker.gpg
