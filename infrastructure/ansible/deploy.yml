@@ -50,12 +50,9 @@
         group: ubuntu
         mode: "0644"
 
-    - name: Write .env for compose
+    - name: Create .env file
       copy:
-        dest: "{{ app_dir }}/.env"
-        owner: ubuntu
-        group: ubuntu
-        mode: "0600"
+        dest: /home/ubuntu/app/.env
         content: |
           POSTGRES_USER={{ postgres_user }}
           POSTGRES_PASSWORD={{ postgres_password }}
