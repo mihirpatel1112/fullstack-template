@@ -6,7 +6,6 @@ on:
       - production
 
 jobs:
-
   build_and_push:
     runs-on: ubuntu-latest
     permissions:
