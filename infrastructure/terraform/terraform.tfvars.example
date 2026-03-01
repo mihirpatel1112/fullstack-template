@@ -1,5 +1,5 @@
 aws_region   = "ap-southeast-2"
 project_name = "fullstack-template"
 env          = "staging"
-key_name     = "my-ec2-keypair"
+key_name     = "fullstack-template-key-pair"
 ssh_cidr     = "YOUR_IP/32"
