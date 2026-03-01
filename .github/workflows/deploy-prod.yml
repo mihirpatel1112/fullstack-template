@@ -2,9 +2,11 @@ name: Deploy Production
 
 on:
   push:
-    branches: [production]
+    branches:
+      - production
 
 jobs:
+
   build_and_push:
     runs-on: ubuntu-latest
     permissions:
@@ -13,9 +15,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
 
       - name: Login to GHCR
         uses: docker/login-action@v3
@@ -29,50 +28,48 @@ jobs:
         with:
           context: ./packages/backend
           push: true
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/fullstack-backend:latest
-            ghcr.io/${{ github.repository_owner }}/fullstack-backend:${{ github.sha }}
+          tags: ghcr.io/${{ github.repository_owner }}/fullstack-backend:latest
 
       - name: Build & Push Frontend
         uses: docker/build-push-action@v6
         with:
           context: ./packages/frontend
           push: true
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/fullstack-frontend:latest
-            ghcr.io/${{ github.repository_owner }}/fullstack-frontend:${{ github.sha }}
+          tags: ghcr.io/${{ github.repository_owner }}/fullstack-frontend:latest
+
 
   terraform_apply:
-  needs: build_and_push
-  runs-on: ubuntu-latest
-  outputs:
-    server_ip: ${{ steps.out.outputs.server_ip }}
+    needs: build_and_push
+    runs-on: ubuntu-latest
+    outputs:
+      server_ip: ${{ steps.out.outputs.server_ip }}
 
-  steps:
-    - uses: actions/checkout@v4
+    steps:
+      - uses: actions/checkout@v4
 
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v3
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ secrets.AWS_REGION }}
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-    - name: Terraform Init
-      working-directory: infrastructure/terraform
-      run: terraform init -reconfigure
+      - name: Terraform Init
+        working-directory: infrastructure/terraform
+        run: terraform init -reconfigure
 
-    - name: Terraform Apply
-      working-directory: infrastructure/terraform
-      run: terraform apply -auto-approve
+      - name: Terraform Apply
+        working-directory: infrastructure/terraform
+        run: terraform apply -auto-approve
 
-    - name: Read EC2 Public IP output
-      id: out
-      working-directory: infrastructure/terraform
-      run: echo "server_ip=$(terraform output -raw server_public_ip)" >> "$GITHUB_OUTPUT"
+      - name: Get EC2 Public IP
+        id: out
+        working-directory: infrastructure/terraform
+        run: echo "server_ip=$(terraform output -raw server_public_ip)" >> "$GITHUB_OUTPUT"
+
 
   ansible_deploy:
     needs: terraform_apply
@@ -86,24 +83,17 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ansible
 
-      - name: Setup SSH key
+      - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ needs.terraform_apply.outputs.server_ip }} >> ~/.ssh/known_hosts
 
-      - name: Run Ansible deploy
-        env:
-          SERVER_IP: ${{ needs.terraform_apply.outputs.server_ip }}
-          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
-          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+      - name: Run Ansible
         run: |
           ansible-playbook ansible/deploy.yml \
-            -i "${SERVER_IP}," \
+            -i "${{ needs.terraform_apply.outputs.server_ip }}," \
             --private-key ~/.ssh/id_rsa \
             -u ubuntu \
-            --extra-vars "ghcr_username=${GHCR_USERNAME} ghcr_token=${GHCR_TOKEN} postgres_user=${POSTGRES_USER} postgres_password=${POSTGRES_PASSWORD} postgres_db=${POSTGRES_DB}"
+            --extra-vars "ghcr_username=${{ secrets.GHCR_USERNAME }} ghcr_token=${{ secrets.GHCR_TOKEN }} postgres_user=${{ secrets.POSTGRES_USER }} postgres_password=${{ secrets.POSTGRES_PASSWORD }} postgres_db=${{ secrets.POSTGRES_DB }}"
