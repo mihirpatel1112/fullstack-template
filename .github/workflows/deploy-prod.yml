@@ -1,35 +1,102 @@
 name: Deploy Production
 
 on:
-  workflow_run:
-    workflows: ["Terraform Apply"]
-    types:
-      - completed
+  push:
     branches: [production]
 
 jobs:
-  deploy:
+  build_and_push:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    permissions:
+      contents: read
+      packages: write
+
     steps:
-      - name: Setup SSH
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push Backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./packages/backend
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/fullstack-backend:latest
+            ghcr.io/${{ github.repository_owner }}/fullstack-backend:${{ github.sha }}
+
+      - name: Build & Push Frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./packages/frontend
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/fullstack-frontend:latest
+            ghcr.io/${{ github.repository_owner }}/fullstack-frontend:${{ github.sha }}
+
+  terraform_apply:
+    needs: build_and_push
+    runs-on: ubuntu-latest
+    outputs:
+      server_ip: ${{ steps.out.outputs.server_ip }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: terraform init -reconfigure
+
+      - name: Terraform Apply
+        working-directory: terraform
+        run: terraform apply -auto-approve
+
+      - name: Read EC2 Public IP output
+        id: out
+        working-directory: terraform
+        run: echo "server_ip=$(terraform output -raw server_public_ip)" >> "$GITHUB_OUTPUT"
+
+  ansible_deploy:
+    needs: terraform_apply
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Ansible
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ansible
+
+      - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ needs.terraform_apply.outputs.server_ip }} >> ~/.ssh/known_hosts
 
-      - name: Deploy Docker containers
+      - name: Run Ansible deploy
+        env:
+          SERVER_IP: ${{ needs.terraform_apply.outputs.server_ip }}
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
         run: |
-          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-            set -euo pipefail
-            cd /home/ubuntu/app
-            git fetch origin
-            git checkout production
-            git pull origin production
-
-            docker compose down
-            docker compose up -d --build
-
-            docker compose ps
-          EOF
+          ansible-playbook ansible/deploy.yml \
+            -i "${SERVER_IP}," \
+            --private-key ~/.ssh/id_rsa \
+            -u ubuntu \
+            --extra-vars "ghcr_username=${GHCR_USERNAME} ghcr_token=${GHCR_TOKEN} postgres_user=${POSTGRES_USER} postgres_password=${POSTGRES_PASSWORD} postgres_db=${POSTGRES_DB}"
