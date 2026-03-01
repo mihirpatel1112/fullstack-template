@@ -80,7 +80,7 @@ resource "aws_security_group" "ec2_sg" {
 # -----------------------------
 resource "aws_instance" "server" {
   ami                         = data.aws_ami.ubuntu.id
-  instance_type               = "t3.micro"
+  instance_type               = "t3.medium"
   subnet_id                   = data.aws_subnets.default.ids[0]
   key_name                    = var.key_name
   vpc_security_group_ids      = [aws_security_group.ec2_sg.id]
