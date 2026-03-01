@@ -1,8 +1,8 @@
 terraform {
   backend "s3" {
     bucket         = "fullstack-template-tfstate-891377117245"
-    key            = "fullstack-template/staging/terraform.tfstate"
-    region         = "ap-southeast-2"
+    key            = "fullstack-template/${var.env}/terraform.tfstate"
+    region         = var.aws_region
     dynamodb_table = "terraform-locks"
     encrypt        = true
   }
@@ -39,7 +39,7 @@ data "aws_subnets" "default" {
 # Security Group
 # -----------------------------
 resource "aws_security_group" "ec2_sg" {
-  name        = "${var.project_name}-ec2-sg"
+  name        = "${var.project_name}-${var.env}-ec2-sg"
   description = "Allow SSH and HTTP"
   vpc_id      = data.aws_vpc.default.id
 
@@ -67,6 +67,14 @@ resource "aws_security_group" "ec2_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  ingress {
+    description = "Frontend Dev"
+    from_port   = 3000
+    to_port     = 3000
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -80,7 +88,7 @@ resource "aws_security_group" "ec2_sg" {
 # -----------------------------
 resource "aws_instance" "server" {
   ami                         = data.aws_ami.ubuntu.id
-  instance_type               = "t3.medium"
+  instance_type               = var.instance_type
   subnet_id                   = data.aws_subnets.default.ids[0]
   key_name                    = var.key_name
   vpc_security_group_ids      = [aws_security_group.ec2_sg.id]

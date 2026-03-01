@@ -23,7 +23,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@db:5432/app}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://postgres:postgres@db:5432/app}
     ports:
       - "8000:8000"
 
