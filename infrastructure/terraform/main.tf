@@ -1,6 +1,6 @@
 terraform {
   backend "s3" {
-    bucket         = "fullstack-template-terraform-state"
+    bucket         = "fullstack-template-tfstate-891377117245"
     key            = "fullstack-template/staging/terraform.tfstate"
     region         = "ap-southeast-2"
     dynamodb_table = "terraform-locks"
