@@ -55,16 +55,16 @@ jobs:
         uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Init
-        working-directory: terraform
+        working-directory: infrastructure/terraform
         run: terraform init -reconfigure
 
       - name: Terraform Apply
-        working-directory: terraform
+        working-directory: infrastructure/terraform
         run: terraform apply -auto-approve
 
       - name: Read EC2 Public IP output
         id: out
-        working-directory: terraform
+        working-directory: infrastructure/terraform
         run: echo "server_ip=$(terraform output -raw server_public_ip)" >> "$GITHUB_OUTPUT"
 
   ansible_deploy:
