@@ -90,6 +90,14 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ needs.terraform_apply.outputs.server_ip }} >> ~/.ssh/known_hosts
 
+      - name: Create .env file
+        copy:
+          dest: /home/ubuntu/app/.env
+          content: |
+            POSTGRES_USER={{ postgres_user }}
+            POSTGRES_PASSWORD={{ postgres_password }}
+            POSTGRES_DB={{ postgres_db }}
+
       - name: Run Ansible
         run: |
           ansible-playbook infrastructure/ansible/deploy.yml \
