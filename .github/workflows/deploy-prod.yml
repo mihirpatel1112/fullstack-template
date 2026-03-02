@@ -91,7 +91,7 @@ jobs:
 
       - name: Run Ansible
         run: |
-          ansible-playbook infrastructure/ansible/deploy.yml \
+          ansible-playbook infrastructure/ansible/playbooks/deploy.yml \
             -i "${{ needs.terraform_apply.outputs.server_ip }}," \
             --private-key ~/.ssh/id_rsa \
             -u ubuntu \

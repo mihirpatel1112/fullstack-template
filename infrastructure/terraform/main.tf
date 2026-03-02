@@ -1,23 +1,13 @@
-terraform {
-  backend "s3" {
-    bucket         = "fullstack-template-tfstate-891377117245"
-    key            = "fullstack-template/terraform.tfstate"
-    region         = "ap-southeast-2"
-    dynamodb_table = "terraform-locks"
-    encrypt        = true
-  }
-}
-
 # -----------------------------
 # Ubuntu AMI
 # -----------------------------
 data "aws_ami" "ubuntu" {
   most_recent = true
-  owners      = ["099720109477"]
+  owners      = [var.unbuntu_ami_id]
 
   filter {
     name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
+    values = [var.ubuntu_image]
   }
 }
 
@@ -68,7 +58,7 @@ resource "aws_security_group" "ec2_sg" {
   }
 
   ingress {
-    description = "Frontend Dev"
+    description = "Frontend"
     from_port   = 3000
     to_port     = 3000
     protocol    = "tcp"

@@ -7,7 +7,6 @@
     app_dir: /home/ubuntu/app
 
   tasks:
-
     # --- Prepare system ---
     - name: Update apt cache
       apt:
@@ -82,7 +81,7 @@
 
     - name: Copy production docker-compose
       copy:
-        src: files/docker-compose.prod.yml
+        src: app/files/docker-compose.prod.yml
         dest: "{{ app_dir }}/docker-compose.yml"
         owner: ubuntu
         group: ubuntu

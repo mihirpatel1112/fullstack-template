@@ -1,5 +1,6 @@
 variable "aws_region" {
   type = string
+  default = "ap-southeast-2"
 }
 
 variable "project_name" {
@@ -9,6 +10,16 @@ variable "project_name" {
 variable "env" {
   type = string
 } # staging | prod
+
+variable "unbuntu_ami_id" {
+  type = string
+  default = "099720109477"
+}
+
+variable "ubuntu_image" {
+  type = string
+  default = "ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"
+}
 
 variable "vpc_cidr" {
   type    = string
@@ -22,7 +33,7 @@ variable "public_subnet_cidr" {
 
 variable "instance_type" {
   type    = string
-  default = "t3.medium"
+  default = "t3.small"
 }
 
 variable "key_name" {
