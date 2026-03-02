@@ -81,7 +81,7 @@
 
     - name: Copy production docker-compose
       copy:
-        src: app/files/docker-compose.prod.yml
+        src: ../app/files/docker-compose.prod.yml
         dest: "{{ app_dir }}/docker-compose.yml"
         owner: ubuntu
         group: ubuntu

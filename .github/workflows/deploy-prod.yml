@@ -96,3 +96,10 @@ jobs:
             --private-key ~/.ssh/id_rsa \
             -u ubuntu \
             --extra-vars "ghcr_username=${{ secrets.GHCR_USERNAME }} ghcr_token=${{ secrets.GHCR_TOKEN }} postgres_user=${{ secrets.POSTGRES_USER }} postgres_password=${{ secrets.POSTGRES_PASSWORD }} postgres_db=${{ secrets.POSTGRES_DB }}"
+
+      - name: Add Swap
+        run: |
+          ansible-playbook infrastructure/ansible/playbooks/add_swap.yml \
+            -i "${{ needs.terraform_apply.outputs.server_ip }}," \
+            --private-key ~/.ssh/id_rsa \
+            -u ubuntu
