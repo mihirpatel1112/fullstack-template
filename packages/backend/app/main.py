@@ -1,7 +1,8 @@
 from fastapi import FastAPI, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from app.db import engine, Base, get_db
+from app.db.base import Base 
+from app.db.session import engine, get_db
 from app.models import User
 
 app = FastAPI()

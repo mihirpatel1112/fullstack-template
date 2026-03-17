@@ -12,5 +12,7 @@ dependencies = [
     "uvicorn[standard]",
     "sqlalchemy[asyncio]",
     "asyncpg",
-    "python-dotenv"
+    "python-dotenv",
+    "alembic",
+    "psycopg2-binary"
 ]

@@ -1,0 +1,114 @@
+---
+- name: Provision server and run containers
+  hosts: all
+  become: true
+
+  vars:
+    app_dir: /home/ubuntu/app
+
+  tasks:
+    # --- Prepare system ---
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Remove old Docker list if present
+      file:
+        path: /etc/apt/sources.list.d/docker.list
+        state: absent
+
+    - name: Ensure Docker keyrings directory
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: "0755"
+
+    - name: Add Docker GPG key
+      shell: |
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
+          gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+      args:
+        creates: /etc/apt/keyrings/docker.gpg
+
+    - name: Add official Docker apt repo
+      copy:
+        dest: /etc/apt/sources.list.d/docker.list
+        content: |
+          deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu jammy stable
+
+    - name: Update apt after adding Docker repo
+      apt:
+        update_cache: yes
+
+    # --- Install Docker & Compose ---
+    - name: Install Docker packages
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+
+    - name: Start and enable Docker service
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Add ubuntu user to docker group
+      user:
+        name: ubuntu
+        groups: docker
+        append: yes
+
+    # --- App deploy directory ---
+    - name: Create app directory
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        mode: "0755"
+
+    - name: Clone application repo
+      git:
+        repo: "https://github.com/mihirpatel1112/fullstack-template.git"
+        dest: "{{ app_dir }}"
+        version: "production"
+        force: yes
+
+    - name: Copy production docker-compose
+      copy:
+        src: ../app/files/docker-compose.prod.yml
+        dest: "{{ app_dir }}/docker-compose.yml"
+        owner: ubuntu
+        group: ubuntu
+        mode: "0644"
+
+    - name: Create .env file
+      copy:
+        dest: "{{ app_dir }}/.env"
+        content: |
+          POSTGRES_USER={{ postgres_user }}
+          POSTGRES_PASSWORD={{ postgres_password }}
+          POSTGRES_DB={{ postgres_db }}
+        owner: ubuntu
+        group: ubuntu
+        mode: "0600"
+
+    # --- Pull & run images ---
+    - name: Login to GHCR
+      shell: |
+        echo "{{ ghcr_token }}" | docker login ghcr.io -u "{{ ghcr_username }}" --password-stdin
+
+    - name: Pull latest images
+      shell: docker compose pull
+      args:
+        chdir: "{{ app_dir }}"
+
+    - name: Start / update containers
+      shell: docker compose up -d --remove-orphans
+      args:
+        chdir: "{{ app_dir }}"
