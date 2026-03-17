@@ -3,6 +3,11 @@ name: CI
 on:
   pull_request:
   push:
+    branches-ignore:
+      - production
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   docker-build:
@@ -18,14 +23,14 @@ jobs:
       - name: Build Docker images
         run: |
           echo "Starting docker build..."
-          docker compose build
+          docker compose -f docker-compose.yml build
 
       - name: Start services
-        run: docker compose up -d
+        run: docker compose -f docker-compose.yml up -d
 
       - name: Show running containers
-        run: docker compose ps
+        run: docker compose -f docker-compose.yml ps
 
       - name: Stop services
         if: always()
-        run: docker compose down
+        run: docker compose -f docker-compose.yml down
