@@ -1,7 +1,7 @@
 export default function Home() {
   return (
-    <main style={{ padding: 40 }}>
-      <h1>Frontend running</h1>
+    <main className="p-10 bg-black text-white">
+      <h1>Frontend</h1>
     </main>
   );
 }
