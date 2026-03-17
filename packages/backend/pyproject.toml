@@ -16,3 +16,16 @@ dependencies = [
     "alembic",
     "psycopg2-binary"
 ]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "httpx",
+    "ruff",
+    "black"
+]
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+exclude = ["alembic*"]

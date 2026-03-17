@@ -18,7 +18,7 @@ services:
   backend:
     build:
       context: ./packages/backend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     depends_on:
       db:
         condition: service_healthy
@@ -26,6 +26,8 @@ services:
       ASYNC_DATABASE_URL: ${ASYNC_DATABASE_URL}
     ports:
       - "8000:8000"
+    volumes:
+    - ./packages/backend:/app
 
   frontend:
     build:
@@ -33,6 +35,10 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
+    volumes:
+    - ./packages/frontend:/app
+    - /app/node_modules
+    command: npm run dev
 
 volumes:
   postgres_data:
